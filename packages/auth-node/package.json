@@ -1,0 +1,77 @@
+{
+  "name": "@dooor-ai/auth-node",
+  "version": "0.1.0",
+  "description": "Server-side verification for Dooor Auth access tokens: offline JWKS verification with kid caching, plus Express and generic guard adapters.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dooor-AI/dooor-auth-js.git",
+    "directory": "packages/auth-node"
+  },
+  "homepage": "https://github.com/Dooor-AI/dooor-auth-js/tree/main/packages/auth-node#readme",
+  "bugs": {
+    "url": "https://github.com/Dooor-AI/dooor-auth-js/issues"
+  },
+  "keywords": [
+    "dooor",
+    "auth",
+    "jwt",
+    "jwks",
+    "express",
+    "oidc"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./express": {
+      "import": {
+        "types": "./dist/express.d.ts",
+        "default": "./dist/express.js"
+      },
+      "require": {
+        "types": "./dist/express.d.ts",
+        "default": "./dist/express.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@dooor-ai/auth-core": "workspace:*",
+    "jose": "^5.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsup": "^8.5.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "dooor-auth-js",
+  "private": true,
+  "description": "Dooor Auth SDKs monorepo: @dooor-ai/auth-core, @dooor-ai/auth-node, @dooor-ai/auth-react",
+  "license": "MIT",
+  "packageManager": "pnpm@8.15.4",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter=./packages/* run build",
+    "test": "pnpm -r --filter=./packages/* run test",
+    "lint": "pnpm -r --filter=./packages/* run lint",
+    "typecheck": "pnpm -r --filter=./packages/* run typecheck",
+    "clean": "pnpm -r --filter=./packages/* run clean",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "@dooor-ai/auth-core",
+  "version": "0.1.0",
+  "description": "Framework-agnostic OIDC client helpers for Dooor Auth (authorize URL, PKCE, token exchange, refresh).",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dooor-AI/dooor-auth-js.git",
+    "directory": "packages/auth-core"
+  },
+  "homepage": "https://github.com/Dooor-AI/dooor-auth-js/tree/main/packages/auth-core#readme",
+  "bugs": {
+    "url": "https://github.com/Dooor-AI/dooor-auth-js/issues"
+  },
+  "keywords": ["dooor", "auth", "oidc", "oauth", "pkce"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
