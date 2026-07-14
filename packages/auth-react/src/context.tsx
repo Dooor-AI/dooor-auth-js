@@ -1,7 +1,7 @@
 "use client";
 
 import type { DooorUser } from "@dooor-ai/auth-core";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 
 export interface DooorSessionResponse {
   isSignedIn: boolean;
@@ -43,7 +43,7 @@ export function DooorAuthProvider({
   publishableKey,
   basePath = "/api/dooor-auth",
   children,
-}: DooorAuthProviderProps): JSX.Element {
+}: DooorAuthProviderProps): ReactElement {
   const [isLoaded, setIsLoaded] = useState(false);
   const [session, setSession] = useState<DooorSessionResponse>(EMPTY_SESSION);
   const inflightRef = useRef<Promise<DooorSessionResponse> | null>(null);
