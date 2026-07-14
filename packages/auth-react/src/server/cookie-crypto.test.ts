@@ -25,7 +25,8 @@ describe("cookie-crypto", () => {
   it("fails closed when the ciphertext is tampered with", () => {
     const encrypted = encryptCookiePayload(secret, { a: 1 });
     const buffer = Buffer.from(encrypted, "base64url");
-    buffer[buffer.length - 1] ^= 0xff; // flip the last byte of the ciphertext
+    const lastIndex = buffer.length - 1;
+    buffer[lastIndex] = (buffer[lastIndex] ?? 0) ^ 0xff; // flip the last byte of the ciphertext
     const tampered = buffer.toString("base64url");
     expect(decryptCookiePayload(secret, tampered)).toBeUndefined();
   });

@@ -1,5 +1,5 @@
 import { createServer, type Server } from "node:http";
-import { SignJWT, exportJWK, generateKeyPair } from "jose";
+import { SignJWT, exportJWK, generateKeyPair, type JWK } from "jose";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { __resetJwksCacheForTests } from "./verify.js";
 import { requireDooorAuth, type DooorAuthRequest, type DooorAuthResponseLike } from "./express.js";
@@ -10,7 +10,7 @@ describe("requireDooorAuth (express adapter)", () => {
 
   let server: Server;
   let baseUrl: string;
-  let jwks: Record<string, unknown>[] = [];
+  let jwks: JWK[] = [];
 
   beforeAll(async () => {
     server = createServer((_req, res) => {

@@ -1,13 +1,13 @@
 import { createServer, type Server } from "node:http";
 import { DooorAuthError } from "@dooor-ai/auth-core";
-import { SignJWT, exportJWK, generateKeyPair } from "jose";
+import { SignJWT, exportJWK, generateKeyPair, type JWK } from "jose";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { __resetJwksCacheForTests, verifyDooorToken } from "./verify.js";
 
 interface TestKey {
   kid: string;
   privateKey: CryptoKey;
-  jwk: Record<string, unknown>;
+  jwk: JWK;
 }
 
 async function createRsaKey(kid: string): Promise<TestKey> {
@@ -25,7 +25,7 @@ describe("verifyDooorToken", () => {
 
   let server: Server;
   let baseUrl: string;
-  let jwks: Record<string, unknown>[] = [];
+  let jwks: JWK[] = [];
   let fetchCount = 0;
 
   beforeAll(async () => {
