@@ -1,6 +1,6 @@
-import { DEFAULT_ISSUER, TOKEN_PATH } from "./constants.js";
+import { DEFAULT_ISSUER, REVOKE_PATH, TOKEN_PATH } from "./constants.js";
 import { postForm } from "./http.js";
-import type { DooorTokenSet, ExchangeCodeOptions, RefreshTokenOptions } from "./types.js";
+import type { DooorTokenSet, ExchangeCodeOptions, RefreshTokenOptions, RevokeTokenOptions } from "./types.js";
 
 interface RawTokenResponse {
   access_token: string;
@@ -53,4 +53,13 @@ export async function refreshToken(options: RefreshTokenOptions): Promise<DooorT
     client_id: options.publishableKey,
   });
   return toTokenSet(raw);
+}
+
+/** Revokes the central IdP session behind a refresh token. */
+export async function revokeToken(options: RevokeTokenOptions): Promise<void> {
+  const issuer = options.issuer ?? DEFAULT_ISSUER;
+  await postForm(new URL(REVOKE_PATH, issuer).toString(), {
+    token: options.token,
+    client_id: options.publishableKey,
+  });
 }

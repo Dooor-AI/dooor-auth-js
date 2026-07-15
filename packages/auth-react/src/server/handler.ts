@@ -1,4 +1,4 @@
-import { buildAuthorizeUrl, createPkcePair, exchangeCode, generateState, parseCallback, refreshToken, type DooorUser } from "@dooor-ai/auth-core";
+import { buildAuthorizeUrl, createPkcePair, exchangeCode, generateState, parseCallback, refreshToken, revokeToken, type DooorUser } from "@dooor-ai/auth-core";
 import { verifyDooorToken } from "@dooor-ai/auth-node";
 import { resolveConfig, type CreateDooorAuthHandlerOptions, type ResolvedDooorAuthConfig, type SessionCookiePayload, type TxnCookiePayload } from "./config.js";
 import { decryptCookiePayload, encryptCookiePayload } from "./cookie-crypto.js";
@@ -30,7 +30,11 @@ async function decodeUserFromAccessToken(config: ResolvedDooorAuthConfig, access
 
 async function handleSignIn(request: Request, config: ResolvedDooorAuthConfig): Promise<Response> {
   const url = new URL(request.url);
-  const redirectAfter = url.searchParams.get("redirect_url") ?? config.defaultRedirectUrl;
+  const redirectAfter = resolveSameOriginRedirect(
+    url.searchParams.get("redirect_url"),
+    url,
+    config.defaultRedirectUrl,
+  );
 
   const pkce = await createPkcePair();
   const state = generateState();
@@ -98,7 +102,13 @@ async function handleCallback(request: Request, config: ResolvedDooorAuthConfig)
       maxAge: SESSION_COOKIE_MAX_AGE,
     }),
   );
-  headers.set("Location", new URL(txn.redirectAfter || config.defaultRedirectUrl, url.origin).toString());
+  headers.set(
+    "Location",
+    new URL(
+      resolveSameOriginRedirect(txn.redirectAfter, url, config.defaultRedirectUrl),
+      url.origin,
+    ).toString(),
+  );
   return new Response(null, { status: 302, headers });
 }
 
@@ -152,13 +162,43 @@ async function handleSession(request: Request, config: ResolvedDooorAuthConfig):
   }
 }
 
-async function handleSignOut(_request: Request, config: ResolvedDooorAuthConfig): Promise<Response> {
-  // Note: this clears the local BFF session only. It does not yet call `POST /v1/idp/revoke`
-  // on the IdP, so the underlying refresh token is not server-side invalidated until it expires
-  // or a principal/app-user block cascades into it. Documented limitation for v1.
+async function handleSignOut(request: Request, config: ResolvedDooorAuthConfig): Promise<Response> {
+  const cookies = parseCookies(request.headers.get("cookie"));
+  const raw = cookies[config.cookieName];
+  const session = raw ? decryptCookiePayload<SessionCookiePayload>(config.cookieSecret, raw) : undefined;
+  if (session?.refreshToken) {
+    try {
+      await revokeToken({
+        issuer: config.issuer,
+        publishableKey: config.publishableKey,
+        token: session.refreshToken,
+      });
+    } catch {
+      // Local logout must remain available during an IdP outage. The short
+      // access-token TTL bounds the remaining server-side session window.
+    }
+  }
   const headers = new Headers();
   headers.append("Set-Cookie", clearCookie(config.cookieName));
   return jsonResponse({ signedOut: true }, headers);
+}
+
+function resolveSameOriginRedirect(
+  candidate: string | null | undefined,
+  requestUrl: URL,
+  fallback: string,
+): string {
+  for (const value of [candidate, fallback, "/"]) {
+    if (!value) continue;
+    try {
+      const resolved = new URL(value, requestUrl.origin);
+      if (resolved.origin !== requestUrl.origin) continue;
+      return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+    } catch {
+      continue;
+    }
+  }
+  return "/";
 }
 
 /**

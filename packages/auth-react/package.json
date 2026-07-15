@@ -1,6 +1,6 @@
 {
   "name": "@dooor-ai/auth-react",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "React provider, hooks and components for Dooor Auth, plus a Next.js server entry (BFF route handlers and middleware stub).",
   "license": "MIT",
   "type": "module",
@@ -64,7 +64,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@dooor-ai/auth-core": "^0.1.2",
+    "@dooor-ai/auth-core": "^0.1.3",
     "@dooor-ai/auth-node": "^0.1.2"
   },
   "peerDependencies": {
