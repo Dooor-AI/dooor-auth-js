@@ -1,5 +1,5 @@
 import { DooorAuthError } from "@dooor-ai/auth-core";
-import { verifyDooorToken } from "./verify.js";
+import { verifyDooorAccessToken } from "./verify.js";
 import type { DooorTokenPayload, VerifyDooorTokenOptions } from "./types.js";
 
 /** Structural request shape accepted by the default bearer-token extractor. */
@@ -26,7 +26,7 @@ export function createAuthGuard(options: CreateAuthGuardOptions = {}) {
     if (!token) {
       throw new DooorAuthError("Missing bearer token", "missing_token");
     }
-    return verifyDooorToken(token, options);
+    return verifyDooorAccessToken(token, options);
   };
 }
 

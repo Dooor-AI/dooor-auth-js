@@ -17,6 +17,18 @@ const claims = await verifyDooorToken(token, { audience: process.env.DOOOR_AUTH_
 // { sub, aud, sid, realm, app_user, org, email, roles, iat, exp, jti }
 ```
 
+For API bearer authentication, use `verifyDooorAccessToken` or one of the
+middleware adapters. They reject signed ID tokens and prevent token
+substitution:
+
+```ts
+import { verifyDooorAccessToken } from "@dooor-ai/auth-node";
+
+const claims = await verifyDooorAccessToken(token, {
+  audience: process.env.DOOOR_AUTH_APP_ID!,
+});
+```
+
 `issuer` defaults to `DOOOR_AUTH_ISSUER` (falling back to `https://auth.dooor.ai`), and `audience` defaults to `DOOOR_AUTH_APP_ID`. Both env vars are injected automatically into apps deployed on the Dooor OS runtime; nothing to configure by hand there.
 
 ## Express
@@ -49,6 +61,7 @@ fastify.addHook("preHandler", async (request) => {
 
 - Only `RS256` is accepted; `alg: none` and symmetric-key downgrade attempts are rejected before signature verification.
 - `aud` must match the app's id exactly; a token minted for one app is rejected by another app's verifier.
+- API guards require `token_use=access`; a signed ID token is rejected as a bearer token.
 - The JWKS cache refetches on TTL expiry (5 min) or immediately when a `kid` it hasn't seen is presented, so key rotation doesn't require a deploy or restart.
 
 ## License

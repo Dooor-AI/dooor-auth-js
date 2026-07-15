@@ -77,3 +77,21 @@ export async function verifyDooorToken(
     );
   }
 }
+
+/**
+ * Verifies a bearer access token and rejects a correctly signed `id_token`.
+ * Use this function in API guards and middleware to prevent token substitution.
+ */
+export async function verifyDooorAccessToken(
+  token: string,
+  options: VerifyDooorTokenOptions = {},
+): Promise<DooorTokenPayload> {
+  const payload = await verifyDooorToken(token, options);
+  if (payload.token_use !== "access") {
+    throw new DooorAuthError(
+      "Token is not a Dooor Auth access token",
+      "invalid_token_use",
+    );
+  }
+  return payload;
+}

@@ -15,6 +15,8 @@ export interface DooorTokenPayload extends JWTPayload {
   org?: string;
   email?: string;
   roles?: string[];
+  /** Distinguishes bearer access tokens from identity-only ID tokens. */
+  token_use?: "access" | "id";
 }
 
 export interface VerifyDooorTokenOptions {

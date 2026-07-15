@@ -2,7 +2,11 @@ import { createServer, type Server } from "node:http";
 import { DooorAuthError } from "@dooor-ai/auth-core";
 import { SignJWT, exportJWK, generateKeyPair, type JWK } from "jose";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { __resetJwksCacheForTests, verifyDooorToken } from "./verify.js";
+import {
+  __resetJwksCacheForTests,
+  verifyDooorAccessToken,
+  verifyDooorToken,
+} from "./verify.js";
 
 interface TestKey {
   kid: string;
@@ -55,7 +59,7 @@ describe("verifyDooorToken", () => {
     kid: string,
     claimsOverride: Record<string, unknown> = {},
   ): Promise<string> {
-    return new SignJWT({ email: "user@example.com", roles: ["member"], realm: "platform", ...claimsOverride })
+    return new SignJWT({ email: "user@example.com", roles: ["member"], realm: "platform", token_use: "access", ...claimsOverride })
       .setProtectedHeader({ alg: "RS256", kid })
       .setIssuer(issuer)
       .setAudience(audience)
@@ -113,6 +117,23 @@ describe("verifyDooorToken", () => {
     await expect(
       verifyDooorToken(token, { audience: "app_other", issuer, jwksUrl: `${baseUrl}/jwks-aud.json` }),
     ).rejects.toThrow(DooorAuthError);
+  });
+
+  it("rejects ID token substitution in access-token verification", async () => {
+    const key = await createRsaKey("kid-token-use");
+    jwks = [key.jwk];
+    const idToken = await signToken(key.privateKey, key.kid, {
+      token_use: "id",
+    });
+    const jwksUrl = `${baseUrl}/jwks-token-use.json`;
+
+    await expect(
+      verifyDooorAccessToken(idToken, { audience, issuer, jwksUrl }),
+    ).rejects.toMatchObject({ code: "invalid_token_use" });
+
+    await expect(
+      verifyDooorToken(idToken, { audience, issuer, jwksUrl }),
+    ).resolves.toMatchObject({ token_use: "id" });
   });
 
   it("rejects a token signed by a kid absent from the JWKS", async () => {
