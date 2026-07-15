@@ -33,7 +33,7 @@ export function SignedOut({ children }: SignedOutProps) {
 
 export interface SignInButtonProps {
   children?: ReactNode;
-  /** Path (or absolute URL) to send the user back to after signing in. Defaults to the current page. */
+  /** Same-origin path to send the user back to after signing in. Defaults to the current page. */
   redirectUrl?: string;
   basePath?: string;
   className?: string;

@@ -71,6 +71,12 @@ export interface RefreshTokenOptions {
   refreshToken: string;
 }
 
+export interface RevokeTokenOptions {
+  issuer?: string;
+  publishableKey: string;
+  token: string;
+}
+
 export class DooorAuthError extends Error {
   constructor(
     message: string,

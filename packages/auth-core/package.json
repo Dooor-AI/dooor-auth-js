@@ -1,6 +1,6 @@
 {
   "name": "@dooor-ai/auth-core",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Framework-agnostic OIDC client helpers for Dooor Auth (authorize URL, PKCE, token exchange, refresh).",
   "license": "MIT",
   "type": "module",

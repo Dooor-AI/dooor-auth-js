@@ -65,7 +65,7 @@ export default dooorAuthMiddleware({ publicRoutes: ["/", "/sign-in(.*)"] });
 
 The route handler implements the full BFF flow: sign-in redirect (PKCE + `state` in a short-lived encrypted cookie), OAuth callback (code exchange), session read with transparent refresh, and sign-out. The session itself lives in an `HttpOnly`, `Secure` first-party cookie (`dooor_session` by default), encrypted with `DOOOR_AUTH_COOKIE_SECRET` (AES-256-GCM) - never a third-party or `Domain=.apps.dooor.ai` cookie (see PRD §6.3 for why).
 
-`dooorAuthMiddleware` is a **stub**: it only checks whether the session cookie is present, not whether it's still valid (that check happens in the BFF `/session` route on every `useAuth()`/`useUser()` mount). Use it purely as a UX redirect guard, never as your source of truth for authorization.
+`dooorAuthMiddleware` is a **stub**: it only checks whether the session cookie is present, not whether it's still valid (that check happens in the BFF `/session` route on every `useAuth()`/`useUser()` mount). Use it purely as a UX redirect guard, never as your source of truth for authorization. Post-login redirects are restricted to the mini-app's own origin, and `signOut()` revokes the central IdP refresh session before clearing the local cookie.
 
 ## Environment variables
 
