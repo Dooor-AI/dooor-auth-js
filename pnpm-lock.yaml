@@ -30,7 +30,7 @@ importers:
   packages/auth-node:
     dependencies:
       '@dooor-ai/auth-core':
-        specifier: ^0.1.1
+        specifier: ^0.1.2
         version: link:../auth-core
       jose:
         specifier: ^5.9.0
@@ -52,10 +52,10 @@ importers:
   packages/auth-react:
     dependencies:
       '@dooor-ai/auth-core':
-        specifier: ^0.1.1
+        specifier: ^0.1.3
         version: link:../auth-core
       '@dooor-ai/auth-node':
-        specifier: ^0.1.1
+        specifier: ^0.1.2
         version: link:../auth-node
     devDependencies:
       '@types/node':
