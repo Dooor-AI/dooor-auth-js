@@ -1,6 +1,6 @@
 {
   "name": "@dooor-ai/auth-react",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "React provider, hooks and components for Dooor Auth, plus a Next.js server entry (BFF route handlers and middleware stub).",
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,13 @@
   "bugs": {
     "url": "https://github.com/Dooor-AI/dooor-auth-js/issues"
   },
-  "keywords": ["dooor", "auth", "react", "nextjs", "oidc"],
+  "keywords": [
+    "dooor",
+    "auth",
+    "react",
+    "nextjs",
+    "oidc"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -41,7 +47,10 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -55,8 +64,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@dooor-ai/auth-core": "workspace:*",
-    "@dooor-ai/auth-node": "workspace:*"
+    "@dooor-ai/auth-core": "^0.1.2",
+    "@dooor-ai/auth-node": "^0.1.2"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

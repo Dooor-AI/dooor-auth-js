@@ -1,6 +1,6 @@
 {
   "name": "@dooor-ai/auth-core",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Framework-agnostic OIDC client helpers for Dooor Auth (authorize URL, PKCE, token exchange, refresh).",
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,13 @@
   "bugs": {
     "url": "https://github.com/Dooor-AI/dooor-auth-js/issues"
   },
-  "keywords": ["dooor", "auth", "oidc", "oauth", "pkce"],
+  "keywords": [
+    "dooor",
+    "auth",
+    "oidc",
+    "oauth",
+    "pkce"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -31,7 +37,10 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
