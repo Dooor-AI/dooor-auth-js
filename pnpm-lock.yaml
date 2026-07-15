@@ -55,7 +55,7 @@ importers:
         specifier: ^0.1.3
         version: link:../auth-core
       '@dooor-ai/auth-node':
-        specifier: ^0.1.2
+        specifier: ^0.1.3
         version: link:../auth-node
     devDependencies:
       '@types/node':
