@@ -48,7 +48,10 @@ describe("requireDooorAuth (express adapter)", () => {
     jwk.alg = "RS256";
     jwks = [jwk];
 
-    const token = await new SignJWT({ email: "user@example.com" })
+    const token = await new SignJWT({
+      email: "user@example.com",
+      token_use: "access",
+    })
       .setProtectedHeader({ alg: "RS256", kid: "kid-express" })
       .setIssuer(issuer)
       .setAudience(audience)

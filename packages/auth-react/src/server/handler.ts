@@ -1,5 +1,5 @@
 import { buildAuthorizeUrl, createPkcePair, exchangeCode, generateState, parseCallback, refreshToken, revokeToken, type DooorUser } from "@dooor-ai/auth-core";
-import { verifyDooorToken } from "@dooor-ai/auth-node";
+import { verifyDooorAccessToken } from "@dooor-ai/auth-node";
 import { resolveConfig, type CreateDooorAuthHandlerOptions, type ResolvedDooorAuthConfig, type SessionCookiePayload, type TxnCookiePayload } from "./config.js";
 import { decryptCookiePayload, encryptCookiePayload } from "./cookie-crypto.js";
 import { clearCookie, jsonResponse, parseCookies, serializeCookie } from "./http.js";
@@ -13,7 +13,7 @@ export type RouteHandler = (request: Request, context: { params: Promise<{ route
 async function decodeUserFromAccessToken(config: ResolvedDooorAuthConfig, accessToken: string): Promise<DooorUser | undefined> {
   if (!config.appId) return undefined;
   try {
-    const claims = await verifyDooorToken(accessToken, { issuer: config.issuer, audience: config.appId });
+    const claims = await verifyDooorAccessToken(accessToken, { issuer: config.issuer, audience: config.appId });
     return {
       id: claims.sub,
       email: claims.email ?? "",

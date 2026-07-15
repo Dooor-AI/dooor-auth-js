@@ -52,6 +52,12 @@ export function resolveConfig(options: CreateDooorAuthHandlerOptions = {}): Reso
       "missing_cookie_secret",
     );
   }
+  if (cookieSecret.length < 32) {
+    throw new DooorAuthError(
+      "cookieSecret must contain at least 32 characters of high-entropy key material.",
+      "weak_cookie_secret",
+    );
+  }
 
   return {
     issuer,

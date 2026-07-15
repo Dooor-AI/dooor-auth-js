@@ -22,7 +22,7 @@ export interface RequireDooorAuthOptions extends CreateAuthGuardOptions {
 
 /**
  * Express middleware that verifies the `Authorization: Bearer <token>`
- * header via `verifyDooorToken` and attaches the decoded claims to
+ * header via `verifyDooorAccessToken` and attaches the decoded claims to
  * `req.dooor`. Issuer/audience default to `DOOOR_AUTH_ISSUER` /
  * `DOOOR_AUTH_APP_ID` from the environment (see PRD §6.6, injected
  * automatically by the platform at deploy time).
