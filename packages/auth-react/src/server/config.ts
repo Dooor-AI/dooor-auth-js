@@ -1,7 +1,7 @@
 import { DEFAULT_ISSUER, DooorAuthError } from "@dooor-ai/auth-core";
 
 export interface CreateDooorAuthHandlerOptions {
-  /** Dooor Auth issuer. Defaults to `DOOOR_AUTH_ISSUER`, then `https://auth.dooor.ai`. */
+  /** Dooor Auth issuer. Defaults to `DOOOR_AUTH_ISSUER`, then `https://api.os.dooor.ai`. */
   issuer?: string;
   /** OAuth `client_id`. Defaults to `DOOOR_AUTH_PUBLISHABLE_KEY`, then `NEXT_PUBLIC_DOOOR_AUTH_PUBLISHABLE_KEY`. */
   publishableKey?: string;

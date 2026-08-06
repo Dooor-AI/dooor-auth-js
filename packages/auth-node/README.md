@@ -1,6 +1,6 @@
 # @dooor-ai/auth-node
 
-Offline verification of [Dooor Auth](https://auth.dooor.ai) access tokens: fetches the issuer's public JWKS, caches keys by `kid` (5 min TTL, instant refetch on an unknown `kid`), and allowlists `RS256` only. No secret is ever shared with the Dooor platform.
+Offline verification of [Dooor Auth](https://api.os.dooor.ai) access tokens: fetches the issuer's public JWKS, caches keys by `kid` (5 min TTL, instant refetch on an unknown `kid`), and allowlists `RS256` only. No secret is ever shared with the Dooor platform.
 
 ## Install
 
@@ -29,7 +29,7 @@ const claims = await verifyDooorAccessToken(token, {
 });
 ```
 
-`issuer` defaults to `DOOOR_AUTH_ISSUER` (falling back to `https://auth.dooor.ai`), and `audience` defaults to `DOOOR_AUTH_APP_ID`. Both env vars are injected automatically into apps deployed on the Dooor OS runtime; nothing to configure by hand there.
+`issuer` defaults to `DOOOR_AUTH_ISSUER` (falling back to `https://api.os.dooor.ai`), and `audience` defaults to `DOOOR_AUTH_APP_ID`. Both env vars are injected automatically into apps deployed on the Dooor OS runtime; nothing to configure by hand there.
 
 ## Express
 

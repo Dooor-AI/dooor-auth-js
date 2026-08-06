@@ -12,7 +12,7 @@ describe("buildAuthorizeUrl", () => {
       }),
     );
 
-    expect(url.origin).toBe("https://auth.dooor.ai");
+    expect(url.origin).toBe("https://api.os.dooor.ai");
     expect(url.pathname).toBe("/v1/idp/authorize");
     expect(url.searchParams.get("response_type")).toBe("code");
     expect(url.searchParams.get("client_id")).toBe("dor_pk_test");

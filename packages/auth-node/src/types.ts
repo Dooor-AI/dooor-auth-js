@@ -25,7 +25,7 @@ export interface VerifyDooorTokenOptions {
    * `DOOOR_AUTH_APP_ID` from the environment when omitted.
    */
   audience?: string;
-  /** Issuer base URL. Falls back to `DOOOR_AUTH_ISSUER`, then `https://auth.dooor.ai`. */
+  /** Issuer base URL. Falls back to `DOOOR_AUTH_ISSUER`, then `https://api.os.dooor.ai`. */
   issuer?: string;
   /** Overrides the JWKS endpoint. Defaults to `${issuer}/.well-known/jwks.json`. */
   jwksUrl?: string;
