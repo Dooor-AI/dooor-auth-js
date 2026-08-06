@@ -1,6 +1,6 @@
 # @dooor-ai/auth-core
 
-Framework-agnostic OIDC client helpers for [Dooor Auth](https://auth.dooor.ai): build the authorize URL, generate PKCE pairs, parse the callback, and exchange/refresh tokens. Zero framework dependencies, uses `fetch` and the Web Crypto API.
+Framework-agnostic OIDC client helpers for [Dooor Auth](https://api.os.dooor.ai): build the authorize URL, generate PKCE pairs, parse the callback, and exchange/refresh tokens. Zero framework dependencies, uses `fetch` and the Web Crypto API.
 
 Most apps use `@dooor-ai/auth-react` or `@dooor-ai/auth-node` instead, which depend on this package internally. Use `auth-core` directly if you're integrating with a custom framework or writing your own SDK adapter.
 
@@ -46,7 +46,7 @@ const tokens = await exchangeCode({
 - `refreshToken(options)` - redeems a rotating refresh token for a new token set.
 - `MemoryTokenStore` - in-memory `TokenStore` implementation (not persisted across reloads).
 
-Default issuer is `https://auth.dooor.ai`; pass `issuer` to any function to target a different environment.
+Default issuer is `https://api.os.dooor.ai`; pass `issuer` to any function to target a different environment.
 
 ## License
 

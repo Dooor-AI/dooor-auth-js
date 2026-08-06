@@ -1,5 +1,5 @@
 /** Default Dooor Auth issuer. Override via `issuer` option on any helper for self-hosted or non-prod environments. */
-export const DEFAULT_ISSUER = "https://auth.dooor.ai";
+export const DEFAULT_ISSUER = "https://api.os.dooor.ai";
 
 export const AUTHORIZE_PATH = "/v1/idp/authorize";
 export const TOKEN_PATH = "/v1/idp/token";

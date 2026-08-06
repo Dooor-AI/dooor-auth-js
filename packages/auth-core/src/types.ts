@@ -36,7 +36,7 @@ export interface PkcePair {
 }
 
 export interface DooorAuthClientConfig {
-  /** Dooor Auth issuer base URL. Defaults to `https://auth.dooor.ai`. */
+  /** Dooor Auth issuer base URL. Defaults to `https://api.os.dooor.ai`. */
   issuer?: string;
   /** Publishable key of the AuthInstance (`dor_pk_...`), used as the OAuth `client_id`. */
   publishableKey: string;

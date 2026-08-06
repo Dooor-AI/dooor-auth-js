@@ -1,12 +1,12 @@
 # Dooor Auth JS SDKs
 
-Client and server SDKs for [Dooor Auth](https://auth.dooor.ai): an OIDC-compliant identity provider with login-in-minutes DX (`<SignIn/>`, `useUser()`, `requireDooorAuth()`) and offline, JWKS-based token verification. Open standards under the hood: OAuth 2.1 authorization code + PKCE, OIDC discovery. Prefer a generic OIDC client instead? You can - the SDKs are sugar, never a requirement.
+Client and server SDKs for [Dooor Auth](https://api.os.dooor.ai): an OIDC-compliant identity provider with login-in-minutes DX (`<SignIn/>`, `useUser()`, `requireDooorAuth()`) and offline, JWKS-based token verification. Open standards under the hood: OAuth 2.1 authorization code + PKCE, OIDC discovery. Prefer a generic OIDC client instead? You can - the SDKs are sugar, never a requirement.
 
 | Package | What it's for |
 |---|---|
 | [`@dooor-ai/auth-core`](./packages/auth-core) | Framework-agnostic OIDC client helpers (authorize URL, PKCE, callback parsing, token exchange/refresh). Zero framework deps. |
 | [`@dooor-ai/auth-node`](./packages/auth-node) | Server-side, offline token verification via JWKS (cached by `kid`), plus an Express middleware and a generic guard for any framework. |
-| [`@dooor-ai/auth-react`](./packages/auth-react) | React provider/hooks/components, and a Next.js server entry with BFF route handlers + a middleware stub. |
+| [`@dooor-ai/auth-react`](./packages/auth-react) | React provider/hooks/components, and a Next.js server entry with BFF route handlers + an AES-GCM-validating middleware. |
 
 ## Quickstart (Next.js)
 
@@ -73,7 +73,7 @@ No env var needs to be created by hand when the app is deployed on the Dooor OS 
 | Variable | Where |
 |---|---|
 | `NEXT_PUBLIC_DOOOR_AUTH_PUBLISHABLE_KEY` | client provider (`dor_pk_...`, public) |
-| `DOOOR_AUTH_ISSUER` | server handler / `auth-node` (defaults to `https://auth.dooor.ai`) |
+| `DOOOR_AUTH_ISSUER` | server handler / `auth-node` (defaults to `https://api.os.dooor.ai`) |
 | `DOOOR_AUTH_APP_ID` | server handler / `auth-node` (expected token audience) |
 | `DOOOR_AUTH_COOKIE_SECRET` | server handler (encrypts the first-party BFF session cookie; keep secret) |
 
@@ -83,7 +83,7 @@ No env var needs to be created by hand when the app is deployed on the Dooor OS 
 end-user  ──▶  your app (Next.js, using @dooor-ai/auth-react)
                  │  BFF route handlers do the OAuth dance server-side
                  ▼
-          auth.dooor.ai (Dooor Auth IdP)  ──▶  Google / Magic Link
+          api.os.dooor.ai (Dooor Auth IdP)  ──▶  Google / Magic Link
                  │
                  ▼
           your app's backend  ──▶  @dooor-ai/auth-node verifies the
@@ -91,7 +91,7 @@ end-user  ──▶  your app (Next.js, using @dooor-ai/auth-react)
                                     (no secret shared with Dooor)
 ```
 
-- The end-user's session lives in an `HttpOnly`, first-party cookie on **your app's own domain** - never a third-party cookie on `auth.dooor.ai`, and never `localStorage`.
+- The end-user's session lives in an `HttpOnly`, first-party cookie on **your app's own domain** - never a third-party cookie on the issuer domain, and never `localStorage`.
 - Access tokens are short-lived JWTs (RS256, 5 min default TTL) signed by Dooor Auth's rotating key pair. Any backend can verify them offline against the public JWKS, without ever calling back to Dooor Auth.
 - Refresh tokens are opaque, rotate on every use, and re-run the platform's access cascade (workspace active? auth enabled? principal not blocked? app user not banned?) on every refresh - so a block/ban propagates to your app within the access token's TTL.
 
