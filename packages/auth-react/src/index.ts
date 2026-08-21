@@ -11,5 +11,6 @@ export {
   type SignInButtonProps,
   type SignInProps,
   type UserButtonProps,
+  type UserButtonMenuItem,
 } from "./components.js";
 export type { DooorUser } from "@dooor-ai/auth-core";

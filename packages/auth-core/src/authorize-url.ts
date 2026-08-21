@@ -1,4 +1,4 @@
-import { AUTHORIZE_PATH, DEFAULT_ISSUER } from "./constants.js";
+import { AUTHORIZE_PATH, DEFAULT_ISSUER, DEFAULT_SCOPE } from "./constants.js";
 import type { BuildAuthorizeUrlOptions } from "./types.js";
 
 /**
@@ -15,7 +15,7 @@ export function buildAuthorizeUrl(options: BuildAuthorizeUrlOptions): string {
   url.searchParams.set("state", options.state);
   url.searchParams.set("code_challenge", options.codeChallenge);
   url.searchParams.set("code_challenge_method", options.codeChallengeMethod ?? "S256");
-  url.searchParams.set("scope", options.scope ?? "openid profile email");
+  url.searchParams.set("scope", options.scope ?? DEFAULT_SCOPE);
 
   for (const [key, value] of Object.entries(options.extraParams ?? {})) {
     url.searchParams.set(key, value);

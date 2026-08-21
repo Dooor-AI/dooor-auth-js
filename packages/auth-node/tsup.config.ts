@@ -1,12 +1,12 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: { index: "src/index.ts", express: "src/express.ts" },
+  entry: { index: "src/index.ts", express: "src/express.ts", fastify: "src/fastify.ts", nest: "src/nest.ts" },
   format: ["esm", "cjs"],
   dts: true,
   sourcemap: true,
   clean: true,
   target: "es2022",
   splitting: false,
-  external: ["@dooor-ai/auth-core"],
+  external: ["@dooor-ai/auth-core", "@nestjs/common", "@nestjs/core"],
 });

@@ -1,4 +1,4 @@
-import { DEFAULT_ISSUER, DooorAuthError } from "@dooor-ai/auth-core";
+import { DEFAULT_ISSUER, DEFAULT_SCOPE, DooorAuthError } from "@dooor-ai/auth-core";
 
 export interface CreateDooorAuthHandlerOptions {
   /** Dooor Auth issuer. Defaults to `DOOOR_AUTH_ISSUER`, then `https://api.os.dooor.ai`. */
@@ -15,8 +15,10 @@ export interface CreateDooorAuthHandlerOptions {
   defaultRedirectUrl?: string;
   /** Name of the first-party session cookie. Defaults to `dooor_session`. */
   cookieName?: string;
-  /** OAuth `scope` requested at authorize time. Defaults to `openid profile email`. */
+  /** OAuth `scope` requested at authorize time. Defaults to `openid profile email offline_access`. */
   scope?: string;
+  /** Where to send the browser when sign-in fails. Defaults to `DOOOR_AUTH_ERROR_URL`, then the built-in `${basePath}/error` page. */
+  errorUrl?: string;
 }
 
 export interface ResolvedDooorAuthConfig {
@@ -28,7 +30,8 @@ export interface ResolvedDooorAuthConfig {
   defaultRedirectUrl: string;
   cookieName: string;
   txnCookieName: string;
-  scope?: string;
+  scope: string;
+  errorUrl?: string;
 }
 
 export function resolveConfig(options: CreateDooorAuthHandlerOptions = {}): ResolvedDooorAuthConfig {
@@ -68,7 +71,8 @@ export function resolveConfig(options: CreateDooorAuthHandlerOptions = {}): Reso
     defaultRedirectUrl: options.defaultRedirectUrl ?? "/",
     cookieName: options.cookieName ?? "dooor_session",
     txnCookieName: `${options.cookieName ?? "dooor_session"}_txn`,
-    scope: options.scope,
+    scope: options.scope ?? DEFAULT_SCOPE,
+    errorUrl: options.errorUrl ?? process.env.DOOOR_AUTH_ERROR_URL,
   };
 }
 

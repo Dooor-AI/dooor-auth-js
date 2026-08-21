@@ -7,3 +7,10 @@ export const REVOKE_PATH = "/v1/idp/revoke";
 export const USERINFO_PATH = "/v1/idp/userinfo";
 export const JWKS_PATH = "/.well-known/jwks.json";
 export const OPENID_CONFIGURATION_PATH = "/.well-known/openid-configuration";
+
+/**
+ * Default OAuth scope. Includes `offline_access` so the IdP issues a rotating
+ * refresh token - without it the session dies when the 5-minute access token
+ * expires. Advertised by the issuer under `scopes_supported`.
+ */
+export const DEFAULT_SCOPE = "openid profile email offline_access";

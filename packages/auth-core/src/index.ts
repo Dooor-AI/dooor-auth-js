@@ -1,4 +1,4 @@
-export { DEFAULT_ISSUER, AUTHORIZE_PATH, TOKEN_PATH, REVOKE_PATH, USERINFO_PATH, JWKS_PATH, OPENID_CONFIGURATION_PATH } from "./constants.js";
+export { DEFAULT_ISSUER, DEFAULT_SCOPE, AUTHORIZE_PATH, TOKEN_PATH, REVOKE_PATH, USERINFO_PATH, JWKS_PATH, OPENID_CONFIGURATION_PATH } from "./constants.js";
 export { buildAuthorizeUrl } from "./authorize-url.js";
 export { parseCallback } from "./callback.js";
 export { exchangeCode, refreshToken, revokeToken } from "./token.js";

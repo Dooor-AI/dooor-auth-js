@@ -48,6 +48,10 @@ const tokens = await exchangeCode({
 
 Default issuer is `https://api.os.dooor.ai`; pass `issuer` to any function to target a different environment.
 
+## Scopes
+
+`buildAuthorizeUrl` requests `openid profile email offline_access` by default. `offline_access` is what makes the IdP issue a rotating refresh token - drop it only if you genuinely want a session that ends when the 5-minute access token expires.
+
 ## License
 
 MIT
