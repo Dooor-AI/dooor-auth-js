@@ -1,6 +1,6 @@
 {
   "name": "@dooor-ai/auth-node",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Server-side verification for Dooor Auth access tokens: offline JWKS verification with kid caching, plus Express and generic guard adapters.",
   "license": "MIT",
   "type": "module",
@@ -87,7 +87,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@dooor-ai/auth-core": "^0.2.0",
+    "@dooor-ai/auth-core": "^0.3.0",
     "jose": "^5.9.0"
   },
   "devDependencies": {
