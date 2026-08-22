@@ -8,7 +8,26 @@ const TXN_COOKIE_MAX_AGE = 10 * 60; // 10 minutes: enough for a login flow, shor
 const SESSION_COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days ceiling; the IdP's own cascade governs real session validity.
 const REFRESH_SKEW_MS = 15_000;
 
-export type RouteHandler = (request: Request, context: { params: Promise<{ route?: string[] }> | { route?: string[] } }) => Promise<Response>;
+/** Allowed HTTP methods per BFF route. Anything else gets a 405. */
+const ROUTE_METHODS: Record<string, string[]> = {
+  signin: ["GET"],
+  callback: ["GET"],
+  session: ["GET"],
+  signout: ["POST"],
+  error: ["GET"],
+};
+
+/**
+ * Second argument Next.js passes to a route handler. Typed as `any` on
+ * purpose: Next 14 passes `{ params: { route } }` while Next 15+ passes
+ * `{ params: Promise<{ route }> }`, and Next's build-time route validator
+ * rejects a handler whose context type does not match its own exactly. The
+ * implementation awaits `params`, which handles both shapes at runtime.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RouteHandlerContext = any;
+
+export type RouteHandler = (request: Request, context: RouteHandlerContext) => Promise<Response>;
 
 async function decodeUserFromAccessToken(config: ResolvedDooorAuthConfig, accessToken: string): Promise<DooorUser | undefined> {
   if (!config.appId) return undefined;
@@ -53,7 +72,7 @@ async function handleSignIn(request: Request, config: ResolvedDooorAuthConfig): 
   const headers = new Headers({ Location: authorizeUrl });
   headers.append(
     "Set-Cookie",
-    serializeCookie(config.txnCookieName, encryptCookiePayload(config.cookieSecret, txn), {
+    serializeCookie(config.txnCookieName, await encryptCookiePayload(config.cookieSecret, txn), {
       maxAge: TXN_COOKIE_MAX_AGE,
       sameSite: "lax",
     }),
@@ -66,15 +85,16 @@ async function handleCallback(request: Request, config: ResolvedDooorAuthConfig)
   const parsed = parseCallback(url);
   const cookies = parseCookies(request.headers.get("cookie"));
   const txn = cookies[config.txnCookieName]
-    ? decryptCookiePayload<TxnCookiePayload>(config.cookieSecret, cookies[config.txnCookieName]!)
+    ? await decryptCookiePayload<TxnCookiePayload>(config.cookieSecret, cookies[config.txnCookieName]!)
     : undefined;
 
   const headers = new Headers();
   headers.append("Set-Cookie", clearCookie(config.txnCookieName));
 
   if (parsed.error || !parsed.code || !txn || parsed.state !== txn.state) {
-    const errorUrl = new URL("/api/dooor-auth/error", url.origin);
-    errorUrl.searchParams.set("reason", parsed.error ?? "invalid_callback");
+    const reason = parsed.error ?? (!txn ? "missing_transaction" : parsed.state !== txn.state ? "state_mismatch" : "invalid_callback");
+    const errorUrl = new URL(config.errorUrl ?? `${config.basePath}/error`, url.origin);
+    errorUrl.searchParams.set("reason", reason);
     headers.set("Location", errorUrl.toString());
     return new Response(null, { status: 302, headers });
   }
@@ -98,7 +118,7 @@ async function handleCallback(request: Request, config: ResolvedDooorAuthConfig)
 
   headers.append(
     "Set-Cookie",
-    serializeCookie(config.cookieName, encryptCookiePayload(config.cookieSecret, session), {
+    serializeCookie(config.cookieName, await encryptCookiePayload(config.cookieSecret, session), {
       maxAge: SESSION_COOKIE_MAX_AGE,
     }),
   );
@@ -115,7 +135,7 @@ async function handleCallback(request: Request, config: ResolvedDooorAuthConfig)
 async function handleSession(request: Request, config: ResolvedDooorAuthConfig): Promise<Response> {
   const cookies = parseCookies(request.headers.get("cookie"));
   const raw = cookies[config.cookieName];
-  const session = raw ? decryptCookiePayload<SessionCookiePayload>(config.cookieSecret, raw) : undefined;
+  const session = raw ? await decryptCookiePayload<SessionCookiePayload>(config.cookieSecret, raw) : undefined;
 
   if (!session) {
     return jsonResponse({ isSignedIn: false, user: null, accessToken: null, expiresAt: null });
@@ -149,7 +169,7 @@ async function handleSession(request: Request, config: ResolvedDooorAuthConfig):
     const headers = new Headers();
     headers.append(
       "Set-Cookie",
-      serializeCookie(config.cookieName, encryptCookiePayload(config.cookieSecret, next), {
+      serializeCookie(config.cookieName, await encryptCookiePayload(config.cookieSecret, next), {
         maxAge: SESSION_COOKIE_MAX_AGE,
       }),
     );
@@ -165,7 +185,7 @@ async function handleSession(request: Request, config: ResolvedDooorAuthConfig):
 async function handleSignOut(request: Request, config: ResolvedDooorAuthConfig): Promise<Response> {
   const cookies = parseCookies(request.headers.get("cookie"));
   const raw = cookies[config.cookieName];
-  const session = raw ? decryptCookiePayload<SessionCookiePayload>(config.cookieSecret, raw) : undefined;
+  const session = raw ? await decryptCookiePayload<SessionCookiePayload>(config.cookieSecret, raw) : undefined;
   if (session?.refreshToken) {
     try {
       await revokeToken({
@@ -181,6 +201,40 @@ async function handleSignOut(request: Request, config: ResolvedDooorAuthConfig):
   const headers = new Headers();
   headers.append("Set-Cookie", clearCookie(config.cookieName));
   return jsonResponse({ signedOut: true }, headers);
+}
+
+/**
+ * Renders the fallback sign-in error page. Apps that want their own UI set
+ * `errorUrl` (or `DOOOR_AUTH_ERROR_URL`) and get redirected there with the
+ * same `?reason=` query param instead.
+ */
+function handleError(request: Request): Response {
+  const url = new URL(request.url);
+  const reason = sanitizeReason(url.searchParams.get("reason"));
+  const body = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign-in failed</title>
+  </head>
+  <body style="font-family: system-ui, sans-serif; max-width: 32rem; margin: 4rem auto; padding: 0 1rem; line-height: 1.5">
+    <h1 style="font-size: 1.25rem; margin-bottom: 0.5rem">Sign-in could not be completed</h1>
+    <p style="color: #555">Reason: <code>${reason}</code></p>
+    <p><a href="/">Back to the app</a></p>
+  </body>
+</html>`;
+  return new Response(body, {
+    status: 400,
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+  });
+}
+
+/** OAuth error codes are `[a-z_]` per RFC 6749 §4.1.2.1; anything else is dropped so the reason can never be reflected as HTML. */
+function sanitizeReason(raw: string | null): string {
+  if (!raw) return "unknown_error";
+  const cleaned = raw.replace(/[^a-z_]/gi, "").slice(0, 64);
+  return cleaned.length > 0 ? cleaned : "unknown_error";
 }
 
 function resolveSameOriginRedirect(
@@ -211,8 +265,18 @@ function resolveSameOriginRedirect(
 export function createDooorAuthHandler(options: CreateDooorAuthHandlerOptions = {}): { GET: RouteHandler; POST: RouteHandler } {
   const handler: RouteHandler = async (request, context) => {
     const config = resolveConfig(options);
-    const params = await context.params;
-    const route = params.route?.[0];
+    const params = (await context.params) as { route?: string[] } | undefined;
+    const route = params?.route?.[0];
+
+    const allowedMethods = route ? ROUTE_METHODS[route] : undefined;
+    if (!allowedMethods) return new Response("Not found", { status: 404 });
+    if (!allowedMethods.includes(request.method)) {
+      // Notably: sign-out is POST-only, so a cross-site `<img src=".../signout">` cannot end the session.
+      return new Response("Method not allowed", {
+        status: 405,
+        headers: { allow: allowedMethods.join(", ") },
+      });
+    }
 
     switch (route) {
       case "signin":
@@ -223,6 +287,8 @@ export function createDooorAuthHandler(options: CreateDooorAuthHandlerOptions = 
         return handleSession(request, config);
       case "signout":
         return handleSignOut(request, config);
+      case "error":
+        return handleError(request);
       default:
         return new Response("Not found", { status: 404 });
     }

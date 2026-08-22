@@ -1,5 +1,20 @@
 import { createAuthGuard, type CreateAuthGuardOptions } from "./guard.js";
+import { assertRoles } from "./roles.js";
 import type { DooorTokenPayload } from "./types.js";
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    /**
+     * Types `req.dooor` for downstream handlers. Declared here (rather than
+     * pulled from `@types/express`) so the package stays dependency-free;
+     * merging is a no-op when Express types are absent.
+     */
+    interface Request {
+      dooor?: DooorTokenPayload;
+    }
+  }
+}
 
 /** Structural subset of Express's `Request` this middleware needs. No `express` dependency required. */
 export interface DooorAuthRequest {
@@ -18,6 +33,10 @@ export type NextLike = (err?: unknown) => void;
 export interface RequireDooorAuthOptions extends CreateAuthGuardOptions {
   /** When true, missing/invalid tokens call `next()` without a body instead of 401ing. `req.dooor` stays undefined. */
   optional?: boolean;
+  /** Roles the token must carry. Denied requests get a 403 (authenticated but not allowed), not a 401. */
+  roles?: string[];
+  /** Require every role in `roles` instead of any one of them. */
+  requireAllRoles?: boolean;
 }
 
 /**
@@ -42,15 +61,22 @@ export function requireDooorAuth(options: RequireDooorAuthOptions = {}) {
     next: NextLike,
   ): Promise<void> {
     try {
-      req.dooor = await guard(req);
+      const claims = await guard(req);
+      if (options.roles?.length) {
+        assertRoles(claims, options.roles, { requireAll: options.requireAllRoles });
+      }
+      req.dooor = claims;
       next();
     } catch (error) {
       if (options.optional) {
         next();
         return;
       }
-      res.status(401).json({
-        error: "unauthorized",
+      // A valid token that lacks the role is authenticated but unauthorized.
+      const isRoleFailure =
+        typeof error === "object" && error !== null && (error as { code?: string }).code === "insufficient_role";
+      res.status(isRoleFailure ? 403 : 401).json({
+        error: isRoleFailure ? "forbidden" : "unauthorized",
         message: error instanceof Error ? error.message : "Unauthorized",
       });
     }

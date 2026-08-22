@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useDooorAuthContext } from "./context.js";
 
 function buildSignInUrl(basePath: string, redirectUrl?: string): string {
@@ -79,25 +79,202 @@ export function SignIn({ redirectUrl, basePath }: SignInProps) {
   return null;
 }
 
-export interface UserButtonProps {
-  className?: string;
+export interface UserButtonMenuItem {
+  label: string;
+  /** Same-origin URL to navigate to, or a click handler. */
+  href?: string;
+  onClick?: () => void;
 }
 
-/** Minimal avatar/initial button that signs the user out when clicked. Bring your own dropdown UI on top if you need one. */
-export function UserButton({ className }: UserButtonProps) {
+export interface UserButtonProps {
+  className?: string;
+  /** Class applied to the dropdown panel, for styling with your own CSS. */
+  menuClassName?: string;
+  /** Show the user's name next to the avatar. */
+  showName?: boolean;
+  /** Extra entries rendered above "Sign out" (e.g. a link to your own profile page). */
+  menuItems?: UserButtonMenuItem[];
+  /** Where to send the browser after signing out. Defaults to reloading the current page. */
+  afterSignOutUrl?: string;
+  /** Renders the bare avatar button without a dropdown (the pre-0.3 behaviour: click signs out immediately). */
+  disableMenu?: boolean;
+}
+
+const AVATAR_SIZE = 32;
+
+const triggerStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  background: "none",
+  border: "none",
+  padding: 2,
+  cursor: "pointer",
+  font: "inherit",
+};
+
+const avatarStyle: CSSProperties = {
+  width: AVATAR_SIZE,
+  height: AVATAR_SIZE,
+  borderRadius: "50%",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#e5e7eb",
+  color: "#111827",
+  fontSize: 14,
+  fontWeight: 600,
+  overflow: "hidden",
+  flexShrink: 0,
+};
+
+const menuStyle: CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 6px)",
+  right: 0,
+  minWidth: 200,
+  padding: 4,
+  background: "#fff",
+  border: "1px solid #e5e7eb",
+  borderRadius: 8,
+  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+  zIndex: 50,
+};
+
+const menuItemStyle: CSSProperties = {
+  display: "block",
+  width: "100%",
+  textAlign: "left",
+  padding: "8px 10px",
+  background: "none",
+  border: "none",
+  borderRadius: 6,
+  cursor: "pointer",
+  font: "inherit",
+  color: "inherit",
+  textDecoration: "none",
+};
+
+/**
+ * Avatar button with a dropdown showing the signed-in identity, any extra
+ * `menuItems` you pass, and "Sign out". Styles are inline and deliberately
+ * plain - pass `className`/`menuClassName` and restyle, or build your own
+ * control on top of `useUser()` and `useAuth()`.
+ */
+export function UserButton({
+  className,
+  menuClassName,
+  showName = false,
+  menuItems = [],
+  afterSignOutUrl,
+  disableMenu = false,
+}: UserButtonProps) {
   const { user, signOut } = useDooorAuthContext();
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const menuId = useId();
+
+  // Close on outside click and on Escape, so the menu never traps focus.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setIsOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isOpen]);
+
+  const handleSignOut = useCallback(async () => {
+    setIsOpen(false);
+    await signOut();
+    window.location.href = afterSignOutUrl ?? window.location.href;
+  }, [signOut, afterSignOutUrl]);
+
   if (!user) return null;
 
-  const initial = (user.name ?? user.email ?? "?").charAt(0).toUpperCase();
+  const label = user.name ?? user.email ?? "Account";
+  const initial = label.charAt(0).toUpperCase();
 
-  return (
-    <button type="button" className={className} title={user.email} onClick={() => void signOut()}>
+  const avatar = (
+    <span style={avatarStyle} aria-hidden="true">
       {user.image ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={user.image} alt="" width={24} height={24} style={{ borderRadius: "50%" }} />
+        <img src={user.image} alt="" width={AVATAR_SIZE} height={AVATAR_SIZE} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
         initial
       )}
-    </button>
+    </span>
+  );
+
+  if (disableMenu) {
+    return (
+      <button type="button" className={className} style={triggerStyle} title={user.email} onClick={() => void handleSignOut()}>
+        {avatar}
+        {showName ? <span>{label}</span> : null}
+      </button>
+    );
+  }
+
+  return (
+    <div ref={containerRef} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        type="button"
+        className={className}
+        style={triggerStyle}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? menuId : undefined}
+        aria-label={`Account menu for ${label}`}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        {avatar}
+        {showName ? <span>{label}</span> : null}
+      </button>
+
+      {isOpen ? (
+        <div id={menuId} role="menu" className={menuClassName} style={menuStyle}>
+          <div style={{ padding: "8px 10px", borderBottom: "1px solid #f3f4f6", marginBottom: 4 }}>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>{user.name ?? user.email}</div>
+            {user.name && user.email ? <div style={{ fontSize: 12, color: "#6b7280" }}>{user.email}</div> : null}
+          </div>
+
+          {menuItems.map((item) =>
+            item.href ? (
+              <a key={item.label} role="menuitem" href={item.href} style={menuItemStyle} onClick={() => setIsOpen(false)}>
+                {item.label}
+              </a>
+            ) : (
+              <button
+                key={item.label}
+                type="button"
+                role="menuitem"
+                style={menuItemStyle}
+                onClick={() => {
+                  setIsOpen(false);
+                  item.onClick?.();
+                }}
+              >
+                {item.label}
+              </button>
+            ),
+          )}
+
+          <button type="button" role="menuitem" style={menuItemStyle} onClick={() => void handleSignOut()}>
+            Sign out
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }

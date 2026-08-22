@@ -35,4 +35,30 @@ describe("buildAuthorizeUrl", () => {
     expect(url.origin).toBe("https://auth.staging.dooor.ai");
     expect(url.searchParams.get("prompt")).toBe("select_account");
   });
+  it("requests offline_access by default so the IdP issues a refresh token", () => {
+    const url = new URL(
+      buildAuthorizeUrl({
+        publishableKey: "dor_pk_test",
+        redirectUri: "https://app.test/callback",
+        state: "state",
+        codeChallenge: "challenge",
+      }),
+    );
+
+    expect(url.searchParams.get("scope")).toBe("openid profile email offline_access");
+  });
+
+  it("lets an explicit scope override the default", () => {
+    const url = new URL(
+      buildAuthorizeUrl({
+        publishableKey: "dor_pk_test",
+        redirectUri: "https://app.test/callback",
+        state: "state",
+        codeChallenge: "challenge",
+        scope: "openid",
+      }),
+    );
+
+    expect(url.searchParams.get("scope")).toBe("openid");
+  });
 });

@@ -9,7 +9,7 @@ export default defineConfig([
     clean: true,
     target: "es2022",
     splitting: false,
-    external: ["react", "react-dom", "@dooor-ai/auth-core", "@dooor-ai/auth-node"],
+    external: ["react", "react-dom", "next", "next/server", "next/headers", "@dooor-ai/auth-core", "@dooor-ai/auth-node"],
     banner: { js: '"use client";' },
   },
   {
@@ -20,6 +20,6 @@ export default defineConfig([
     clean: false,
     target: "es2022",
     splitting: false,
-    external: ["react", "react-dom", "@dooor-ai/auth-core", "@dooor-ai/auth-node"],
+    external: ["react", "react-dom", "next", "next/server", "next/headers", "@dooor-ai/auth-core", "@dooor-ai/auth-node"],
   },
 ]);
