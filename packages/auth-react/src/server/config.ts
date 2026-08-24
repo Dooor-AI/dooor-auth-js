@@ -9,6 +9,17 @@ export interface CreateDooorAuthHandlerOptions {
   appId?: string;
   /** AES-256-GCM key material for the session/txn cookies. Defaults to `DOOOR_AUTH_COOKIE_SECRET`. Required. */
   cookieSecret?: string;
+  /**
+   * Public origin the browser uses to reach this app, e.g.
+   * `https://myapp.example.com`. Defaults to `DOOOR_AUTH_APP_URL`.
+   *
+   * Set this whenever the app runs behind a reverse proxy. Without it the SDK
+   * falls back to the forwarded headers and then to the request URL, which in
+   * a container is an internal address — and an internal address in
+   * `redirect_uri` is rejected by the IdP. Path, query and port are taken from
+   * the value; only the origin is used.
+   */
+  appUrl?: string;
   /** Base path the route handler is mounted at. Must match the file path, e.g. `app/api/dooor-auth/[...route]/route.ts` -> `/api/dooor-auth`. */
   basePath?: string;
   /** Where to send the user after a successful sign-in when no `redirect_url` was provided. Defaults to `/`. */
@@ -26,6 +37,7 @@ export interface ResolvedDooorAuthConfig {
   publishableKey: string;
   appId?: string;
   cookieSecret: string;
+  appUrl?: string;
   basePath: string;
   defaultRedirectUrl: string;
   cookieName: string;
@@ -62,11 +74,31 @@ export function resolveConfig(options: CreateDooorAuthHandlerOptions = {}): Reso
     );
   }
 
+  const appUrl = options.appUrl ?? process.env.DOOOR_AUTH_APP_URL;
+  if (appUrl !== undefined) {
+    let parsed: URL;
+    try {
+      parsed = new URL(appUrl);
+    } catch {
+      throw new DooorAuthError(
+        `appUrl must be an absolute URL such as https://myapp.example.com (received ${appUrl}).`,
+        "invalid_app_url",
+      );
+    }
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      throw new DooorAuthError(
+        `appUrl must use http or https (received ${parsed.protocol}).`,
+        "invalid_app_url",
+      );
+    }
+  }
+
   return {
     issuer,
     publishableKey,
     appId: options.appId ?? process.env.DOOOR_AUTH_APP_ID,
     cookieSecret,
+    appUrl,
     basePath: options.basePath ?? "/api/dooor-auth",
     defaultRedirectUrl: options.defaultRedirectUrl ?? "/",
     cookieName: options.cookieName ?? "dooor_session",

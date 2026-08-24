@@ -19,6 +19,9 @@ function cookieValue(setCookie: string, name: string): string {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  // Env stubs leak across tests otherwise, and DOOOR_AUTH_* is read at
+  // handler-construction time.
+  vi.unstubAllEnvs();
 });
 
 describe("createDooorAuthHandler", () => {
@@ -315,4 +318,90 @@ describe("createDooorAuthHandler", () => {
     await expect(response.json()).resolves.toMatchObject({ isSignedIn: false, accessToken: null });
     expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
   });
+
+  /**
+   * Regression: deployed behind a reverse proxy, the handler derived the
+   * `redirect_uri` from the origin the process saw
+   * (`https://localhost:3000`), and the IdP answered 400 "redirect_uri is not
+   * on this app's allowlist". No app on a PaaS could complete sign-in.
+   */
+  describe("behind a reverse proxy", () => {
+    const proxied = (headers: Record<string, string>) =>
+      new Request("https://localhost:3000/api/dooor-auth/signin", { headers });
+
+    function redirectUriOf(response: Response): string | null {
+      const location = response.headers.get("location");
+      if (!location) return null;
+      return new URL(location).searchParams.get("redirect_uri");
+    }
+
+    it("uses the forwarded host, not the container's own origin", async () => {
+      const { GET } = createDooorAuthHandler({
+        issuer: "https://auth.example.test",
+        publishableKey: "dor_pk_test",
+        cookieSecret,
+      });
+
+      const response = await GET(
+        proxied({ "x-forwarded-host": "miniapp.apps.example.test", "x-forwarded-proto": "https" }),
+        routeContext("signin"),
+      );
+
+      expect(redirectUriOf(response)).toBe(
+        "https://miniapp.apps.example.test/api/dooor-auth/callback",
+      );
+    });
+
+    it("prefers an explicit appUrl over any header the client can forge", async () => {
+      const { GET } = createDooorAuthHandler({
+        issuer: "https://auth.example.test",
+        publishableKey: "dor_pk_test",
+        cookieSecret,
+        appUrl: "https://miniapp.apps.example.test",
+      });
+
+      const response = await GET(
+        proxied({ "x-forwarded-host": "evil.example", host: "evil.example" }),
+        routeContext("signin"),
+      );
+
+      expect(redirectUriOf(response)).toBe(
+        "https://miniapp.apps.example.test/api/dooor-auth/callback",
+      );
+    });
+
+    it("reads appUrl from DOOOR_AUTH_APP_URL, which the runtime injects", async () => {
+      vi.stubEnv("DOOOR_AUTH_APP_URL", "https://miniapp.apps.example.test");
+
+      const { GET } = createDooorAuthHandler({
+        issuer: "https://auth.example.test",
+        publishableKey: "dor_pk_test",
+        cookieSecret,
+      });
+
+      const response = await GET(proxied({}), routeContext("signin"));
+
+      expect(redirectUriOf(response)).toBe(
+        "https://miniapp.apps.example.test/api/dooor-auth/callback",
+      );
+    });
+
+    it("leaves a direct local request alone", async () => {
+      const { GET } = createDooorAuthHandler({
+        issuer: "https://auth.example.test",
+        publishableKey: "dor_pk_test",
+        cookieSecret,
+      });
+
+      const response = await GET(
+        new Request("http://localhost:3000/api/dooor-auth/signin", {
+          headers: { host: "localhost:3000" },
+        }),
+        routeContext("signin"),
+      );
+
+      expect(redirectUriOf(response)).toBe("http://localhost:3000/api/dooor-auth/callback");
+    });
+  });
+
 });
