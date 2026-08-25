@@ -1,5 +1,6 @@
 import { refreshToken as redeemRefreshToken } from "@dooor-ai/auth-core";
 import { parseCookies, serializeCookie } from "./http.js";
+import { resolveRequestUrl } from "./origin.js";
 import { decryptCookiePayload, encryptCookiePayload } from "./cookie-crypto.js";
 import type { SessionCookiePayload } from "./config.js";
 
@@ -10,6 +11,12 @@ export interface DooorAuthMiddlewareOptions {
   cookieName?: string;
   /** AES-256-GCM secret used by the BFF. Defaults to `DOOOR_AUTH_COOKIE_SECRET`. */
   cookieSecret?: string;
+  /**
+   * Public origin the browser uses to reach this app. Defaults to
+   * `DOOOR_AUTH_APP_URL`. Behind a proxy this is what keeps the sign-in
+   * redirect from pointing at the container's own loopback address.
+   */
+  appUrl?: string;
   /** Base path the BFF route handlers are mounted at. Must match `createDooorAuthHandler`'s `basePath` (default `/api/dooor-auth`), otherwise the middleware guards the auth routes themselves and the sign-in redirect loops. */
   basePath?: string;
   /** Where unauthenticated requests get redirected. Defaults to `${basePath}/signin`. */
@@ -73,8 +80,12 @@ export function dooorAuthMiddleware(options: DooorAuthMiddlewareOptions = {}) {
   const publicRoutes = options.publicRoutes ?? [];
   const shouldRefresh = options.refreshTokens ?? true;
 
+  const appUrl = options.appUrl ?? process.env.DOOOR_AUTH_APP_URL;
+
   return async function middleware(request: Request): Promise<Response | undefined> {
-    const url = new URL(request.url);
+    // Public origin: `redirectToSignIn` puts this in a `Location` header, so
+    // the container's internal origin would send the browser nowhere.
+    const url = resolveRequestUrl(request, appUrl);
 
     if (url.pathname === basePath || url.pathname.startsWith(`${basePath}/`)) return undefined;
     if (publicRoutes.some((pattern) => matchesPublicRoute(url.pathname, pattern))) return undefined;

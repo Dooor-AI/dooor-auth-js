@@ -3,6 +3,7 @@ import { verifyDooorAccessToken } from "@dooor-ai/auth-node";
 import { resolveConfig, type CreateDooorAuthHandlerOptions, type ResolvedDooorAuthConfig, type SessionCookiePayload, type TxnCookiePayload } from "./config.js";
 import { decryptCookiePayload, encryptCookiePayload } from "./cookie-crypto.js";
 import { clearCookie, jsonResponse, parseCookies, serializeCookie } from "./http.js";
+import { resolveRequestUrl } from "./origin.js";
 
 const TXN_COOKIE_MAX_AGE = 10 * 60; // 10 minutes: enough for a login flow, short enough to limit CSRF/replay window.
 const SESSION_COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days ceiling; the IdP's own cascade governs real session validity.
@@ -48,7 +49,9 @@ async function decodeUserFromAccessToken(config: ResolvedDooorAuthConfig, access
 }
 
 async function handleSignIn(request: Request, config: ResolvedDooorAuthConfig): Promise<Response> {
-  const url = new URL(request.url);
+  // Public origin, not the container's: everything derived from `url` below
+  // ends up in front of the browser or inside the `redirect_uri`.
+  const url = resolveRequestUrl(request, config.appUrl);
   const redirectAfter = resolveSameOriginRedirect(
     url.searchParams.get("redirect_url"),
     url,
@@ -81,7 +84,9 @@ async function handleSignIn(request: Request, config: ResolvedDooorAuthConfig): 
 }
 
 async function handleCallback(request: Request, config: ResolvedDooorAuthConfig): Promise<Response> {
-  const url = new URL(request.url);
+  // Must resolve to the same origin `handleSignIn` used: the IdP compares the
+  // `redirect_uri` of the token exchange with the one from the authorize call.
+  const url = resolveRequestUrl(request, config.appUrl);
   const parsed = parseCallback(url);
   const cookies = parseCookies(request.headers.get("cookie"));
   const txn = cookies[config.txnCookieName]
